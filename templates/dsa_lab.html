@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#174b39">
+  <title>FitPulse DSA Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dsa_viz.css') }}">
+  <script defer src="{{ url_for('static', filename='js/dsa_viz.js') }}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="FitPulse DSA Lab home">
+      <span class="brand-mark">f<span>p</span></span>
+      <span>FitPulse<span class="brand-light"> DSA</span><small>LEARN BY DOING</small></span>
+    </a>
+    <div class="workspace-label">YOUR LEARNING LAB</div>
+    <nav class="tabs" aria-label="Visualizations">
+      <button type="button" class="tab nav-item active" data-tab="linked"><span class="nav-icon" aria-hidden="true">↗</span> Linked List</button>
+      <button type="button" class="tab nav-item" data-tab="stack"><span class="nav-icon" aria-hidden="true">▤</span> Stack</button>
+      <button type="button" class="tab nav-item" data-tab="queue"><span class="nav-icon" aria-hidden="true">⇥</span> Queue</button>
+      <button type="button" class="tab nav-item" data-tab="tree"><span class="nav-icon" aria-hidden="true">⑂</span> Binary Tree</button>
+      <button type="button" class="tab nav-item" data-tab="graph"><span class="nav-icon" aria-hidden="true">◌</span> Graph BFS</button>
+      <button type="button" class="tab nav-item" data-tab="linear"><span class="nav-icon" aria-hidden="true">⌕</span> Linear Search</button>
+    </nav>
+    <div class="sidebar-note">
+      <span class="small-leaf" aria-hidden="true">✳</span>
+      <strong>Small steps, clear ideas.</strong>
+      <p>Explore how data structures work with familiar workout examples.</p>
+    </div>
+    <div class="sidebar-footer"><span class="status-dot"></span> Interactive learning space<small>FITPULSE DSA LAB</small></div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div><span class="breadcrumb">Your learning lab</span><span class="slash">/</span><span id="page-crumb">Linked List</span></div>
+      <span class="project-badge">Data structures &amp; algorithms</span>
+    </header>
+    <main id="main">
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow">LEARN BY EXPLORING</div>
+          <h1>Make every operation <span>click.</span></h1>
+          <p>Choose a structure, try an operation and follow what changes.</p>
+        </div>
+        <span class="phase-status"><span class="status-dot"></span> Ready to explore</span>
+      </div>
+      <section class="hero-strip">
+        <div class="hero-copy">
+          <span class="pill light">THE FITPULSE DSA LAB</span>
+          <h2>Familiar workouts.<br>New ways to think.</h2>
+          <p>Connect the concepts to activities you know.<br>Then experiment and see each step unfold.</p>
+        </div>
+        <div class="pair-illustration" aria-hidden="true">
+          <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
+          <div class="concept-card"><span class="concept-icon">↗</span><span>DATA</span><strong>Structure</strong></div>
+          <span class="pair-plus">+</span>
+          <div class="concept-card concept-card-two"><span class="concept-icon">⚡</span><span>WORKOUT</span><strong>Action</strong></div>
+          <span class="illustration-caption">LEARN · TRY · UNDERSTAND</span>
+        </div>
+      </section>
+
+      <div class="stats-grid" aria-label="Lab overview">
+        <article class="stat"><span class="stat-icon green">▦</span><div><span class="stat-value">06</span><span class="stat-label">Interactive visualizations</span></div><span class="stat-detail">Choose from the sidebar</span></article>
+        <article class="stat"><span class="stat-icon peach">✳</span><div><span class="stat-value">01 <small>step at a time</small></span><span class="stat-label">Learn through interaction</span></div><span class="stat-detail">See changes as they happen</span></article>
+        <article class="stat"><span class="stat-icon lavender">↶</span><div><span class="stat-value">∞</span><span class="stat-label">Room to experiment</span></div><span class="stat-detail">Try another operation</span></article>
+      </div>
+
+      <section id="linked" class="panel active">
+        <div class="panel-heading"><div><span class="section-kicker">01 / CONNECT</span><h2>Linked List</h2></div><span class="tag">NODES · POINTERS</span></div>
+        <p class="panel-description">Each workout is stored in a node connected to the next node.</p>
+        <div class="controls"><input id="llValue" placeholder="Workout" aria-label="Workout"><button type="button" data-ll="append">Append</button><button type="button" data-ll="search">Search</button><button type="button" data-ll="delete">Delete</button><button type="button" data-ll="traverse">Traverse</button></div>
+        <div id="llVisual" class="horizontal"></div><p id="llStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="stack" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">02 / ORGANIZE</span><h2>Stack</h2></div><span class="tag">LAST IN · FIRST OUT</span></div>
+        <p class="panel-description">Add activities to the top, then remove the most recent one first.</p>
+        <div class="controls"><input id="stackValue" placeholder="Activity" aria-label="Activity"><button type="button" data-stack="push">Push</button><button type="button" data-stack="pop">Pop</button><button type="button" data-stack="peek">Peek</button><button type="button" data-stack="clear">Clear</button></div>
+        <div class="stack-wrap"><span>TOP</span><div id="stackVisual" class="stack-visual"></div></div><p id="stackStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="queue" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">03 / TAKE TURNS</span><h2>Queue</h2></div><span class="tag">FIRST IN · FIRST OUT</span></div>
+        <p class="panel-description">Activities wait their turn: the first one added is the first one served.</p>
+        <div class="controls"><input id="queueValue" placeholder="Activity" aria-label="Activity"><button type="button" data-queue="enqueue">Enqueue</button><button type="button" data-queue="dequeue">Dequeue</button><button type="button" data-queue="peek">Peek</button><button type="button" data-queue="clear">Clear</button></div>
+        <div class="labels"><span>FRONT</span><span>REAR</span></div><div id="queueVisual" class="horizontal"></div><p id="queueStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="tree" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">04 / FOLLOW A PATH</span><h2>Binary Tree Traversal</h2></div><span class="tag">PREORDER · INORDER · POSTORDER</span></div>
+        <p class="panel-description">Choose a traversal and watch the tree visit its nodes in order.</p>
+        <div class="controls"><button type="button" data-tree="preorder">Preorder</button><button type="button" data-tree="inorder">Inorder</button><button type="button" data-tree="postorder">Postorder</button></div>
+        <div class="tree"><span data-node="40" class="tree-node root">40</span><span data-node="20" class="tree-node l1">20</span><span data-node="60" class="tree-node r1">60</span><span data-node="10" class="tree-node l2a">10</span><span data-node="30" class="tree-node l2b">30</span><span data-node="50" class="tree-node r2a">50</span><span data-node="70" class="tree-node r2b">70</span><svg viewBox="0 0 700 300" aria-hidden="true"><line x1="350" y1="45" x2="210" y2="125"/><line x1="350" y1="45" x2="490" y2="125"/><line x1="210" y1="125" x2="110" y2="230"/><line x1="210" y1="125" x2="290" y2="230"/><line x1="490" y1="125" x2="410" y2="230"/><line x1="490" y1="125" x2="590" y2="230"/></svg></div><p id="treeStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="graph" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">05 / EXPLORE CONNECTIONS</span><h2>Graph and BFS</h2></div><span class="tag">BREADTH-FIRST SEARCH</span></div>
+        <p class="panel-description">Explore an adjacency list and see how breadth-first search moves through connected workouts.</p>
+        <div class="controls"><label for="graphStart">Starting workout</label><select id="graphStart">{% for node in graph %}<option>{{ node }}</option>{% endfor %}</select><button type="button" id="runBfs">Run BFS</button></div>
+        <div class="graph-workspace">
+          <section class="graph-card">
+            <div class="graph-card-heading"><div><span class="section-kicker">NETWORK MAP</span><h3>Workout connections</h3></div><span id="bfsStep" class="graph-step">Ready</span></div>
+            <div class="graph-canvas">
+              <svg id="graphEdges" viewBox="0 0 640 360" role="img" aria-label="Graph showing connections between workouts"></svg>
+              <div id="graphNodes" class="graph-nodes"></div>
+            </div>
+            <div class="queue-trace"><div class="queue-trace-heading"><span class="section-kicker">BFS QUEUE</span><span>First in, first out</span></div><div id="bfsQueue" class="bfs-queue" aria-live="polite"><span class="queue-empty">Run BFS to see the queue</span></div></div>
+          </section>
+          <section class="graph-card adjacency-card">
+            <div class="graph-card-heading"><div><span class="section-kicker">NEIGHBOR LOOKUP</span><h3>Adjacency list</h3></div><span class="tag">UNDIRECTED</span></div>
+            <p class="graph-help">Each workout points to the workouts directly connected to it.</p>
+            <div id="adjacencyList" class="adjacency-list"></div>
+          </section>
+        </div>
+        <div class="bfs-result"><span class="section-kicker">VISIT ORDER</span><div id="bfsOrder" class="bfs-order"><span class="queue-empty">Your traversal will appear here.</span></div></div>
+        <p id="graphStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="linear" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">06 / FIND AN ITEM</span><h2>Linear Search</h2></div><span class="tag">CHECK ONE BY ONE</span></div>
+        <p class="panel-description">Follow each check until the target workout is found or the list ends.</p>
+        <div class="controls"><input id="linearItems" value="Running,Cycling,Yoga,Swimming,Walking" aria-label="Comma-separated workouts"><input id="linearTarget" placeholder="Search workout" aria-label="Search workout"><button type="button" id="runLinear">Search</button></div>
+        <div id="linearVisual" class="horizontal"></div><p id="linearStatus" class="status" aria-live="polite"></p>
+      </section>
+      <div class="disclaimer"><span>ⓘ</span><p><strong>Learn at your own pace.</strong> Try different operations and watch how each structure changes.</p></div>
+      <footer class="page-footer"><span>FitPulse DSA Lab <span>·</span> Learn by doing.</span><span>Explore a structure. Understand the idea.</span></footer>
+    </main>
+  </div>
+  <script>window.GRAPH_DATA = {{ graph|tojson }};</script>
+</body>
+</html>
