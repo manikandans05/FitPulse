@@ -23,6 +23,10 @@
       <button type="button" class="tab nav-item" data-tab="tree"><span class="nav-icon" aria-hidden="true">⑂</span> Binary Tree</button>
       <button type="button" class="tab nav-item" data-tab="graph"><span class="nav-icon" aria-hidden="true">◌</span> Graph BFS</button>
       <button type="button" class="tab nav-item" data-tab="linear"><span class="nav-icon" aria-hidden="true">⌕</span> Linear Search</button>
+      <button type="button" class="tab nav-item" data-tab="merge"><span class="nav-icon" aria-hidden="true">⇄</span> Merge Sort</button>
+      <button type="button" class="tab nav-item" data-tab="insertion"><span class="nav-icon" aria-hidden="true">↧</span> Insertion Sort</button>
+      <button type="button" class="tab nav-item" data-tab="binary"><span class="nav-icon" aria-hidden="true">⌕</span> Binary Search</button>
+      <button type="button" class="tab nav-item" data-tab="heap"><span class="nav-icon" aria-hidden="true">⑂</span> Heap &amp; Priority</button>
     </nav>
     <div class="sidebar-note">
       <span class="small-leaf" aria-hidden="true">✳</span>
@@ -62,7 +66,7 @@
       </section>
 
       <div class="stats-grid" aria-label="Lab overview">
-        <article class="stat"><span class="stat-icon green">▦</span><div><span class="stat-value">06</span><span class="stat-label">Interactive visualizations</span></div><span class="stat-detail">Choose from the sidebar</span></article>
+        <article class="stat"><span class="stat-icon green">▦</span><div><span class="stat-value">10</span><span class="stat-label">Interactive visualizations</span></div><span class="stat-detail">Choose from the sidebar</span></article>
         <article class="stat"><span class="stat-icon peach">✳</span><div><span class="stat-value">01 <small>step at a time</small></span><span class="stat-label">Learn through interaction</span></div><span class="stat-detail">See changes as they happen</span></article>
         <article class="stat"><span class="stat-icon lavender">↶</span><div><span class="stat-value">∞</span><span class="stat-label">Room to experiment</span></div><span class="stat-detail">Try another operation</span></article>
       </div>
@@ -122,7 +126,34 @@
         <div class="panel-heading"><div><span class="section-kicker">06 / FIND AN ITEM</span><h2>Linear Search</h2></div><span class="tag">CHECK ONE BY ONE</span></div>
         <p class="panel-description">Follow each check until the target workout is found or the list ends.</p>
         <div class="controls"><input id="linearItems" value="Running,Cycling,Yoga,Swimming,Walking" aria-label="Comma-separated workouts"><input id="linearTarget" placeholder="Search workout" aria-label="Search workout"><button type="button" id="runLinear">Search</button></div>
+        <div class="controls"><input id="linearValue" maxlength="80" placeholder="New workout" aria-label="New workout"><input id="linearPosition" type="number" min="0" step="1" placeholder="Index (blank = append)" aria-label="Insertion index, blank to append"><button type="button" id="insertLinear">Insert</button></div>
         <div id="linearVisual" class="horizontal"></div><p id="linearStatus" class="status" aria-live="polite"></p>
+      </section>
+      {% for key, title, endpoint, number in [('merge', 'Merge Sort', 'merge-sort', '07'), ('insertion', 'Insertion Sort', 'insertion-sort', '08'), ('binary', 'Binary Search', 'binary-search', '09')] %}
+      <section id="{{ key }}" class="panel algorithm-panel" data-algorithm="{{ endpoint }}">
+        <div class="panel-heading"><div><span class="section-kicker">{{ number }} / {{ 'SEARCH' if key == 'binary' else 'SORT' }}</span><h2>{{ title }}</h2></div><span class="tag">{{ 'SORTED ARRAY' if key == 'binary' else 'ASCENDING ORDER' }}</span></div>
+        <div class="controls">
+          <label for="{{ key }}Items">Values</label><input id="{{ key }}Items" class="numeric-items" value="38,12,27,5,19,42,8" aria-label="{{ title }} values" title="Up to 20 integers from -999 to 999, separated by commas">
+          {% if key == 'binary' %}<input id="binaryTarget" type="number" min="-999" max="999" step="1" value="19" aria-label="Binary search target">{% endif %}
+          <button type="button" class="run-algorithm">{{ 'Search' if key == 'binary' else 'Sort' }}</button>
+        </div>
+        <div class="playback controls">
+          <button type="button" data-playback="back" disabled>Back</button><button type="button" data-playback="play" disabled>Play</button><button type="button" data-playback="next" disabled>Step</button><button type="button" data-playback="reset">Reset</button>
+          <label for="{{ key }}Speed">Step delay</label><input id="{{ key }}Speed" class="step-speed" type="range" min="50" max="1200" step="50" value="500"><output class="step-count">Ready</output>
+        </div>
+        <div class="viz-legend"><span class="legend-active">{{ 'Midpoint' if key == 'binary' else 'Active' }}</span><span class="legend-done">{{ 'Match' if key == 'binary' else 'Complete' }}</span>{% if key == 'binary' %}<span>LOW / MID / HIGH</span>{% endif %}</div>
+        <div id="{{ key }}Visual" class="array-visual" aria-label="{{ title }} array"></div>
+        <div id="{{ key }}Detail" class="algorithm-detail"></div>
+        <p id="{{ key }}Status" class="status" aria-live="polite"></p>
+      </section>
+      {% endfor %}
+      <section id="heap" class="panel">
+        <div class="panel-heading"><div><span class="section-kicker">10 / PRIORITIZE</span><h2>Min-Heap &amp; Priority Processing</h2></div><span class="tag">LOWER NUMBER FIRST · FIFO TIES</span></div>
+        <div class="controls"><input id="heapValue" maxlength="40" placeholder="Activity" aria-label="Heap activity"><label for="heapPriority">Priority</label><input id="heapPriority" type="number" min="1" max="99" step="1" value="3"><button type="button" data-heap="insert">Insert</button><button type="button" data-heap="peek">Peek</button><button type="button" data-heap="process">Process next</button><button type="button" data-heap="process-all">Process all</button><button type="button" data-heap="clear">Clear</button></div>
+        <div class="heap-scroll"><div id="heapTree" class="heap-tree" aria-label="Min-heap tree"></div></div>
+        <h3 class="viz-heading">Heap array <span id="heapCount">0 / 15</span></h3><div id="heapArray" class="array-visual"></div>
+        <h3 class="viz-heading">Processed this operation</h3><ol id="heapProcessed" class="processed-list"></ol>
+        <p id="heapStatus" class="status" aria-live="polite"></p>
       </section>
       <div class="disclaimer"><span>ⓘ</span><p><strong>Learn at your own pace.</strong> Try different operations and watch how each structure changes.</p></div>
       <footer class="page-footer"><span>FitPulse DSA Lab <span>·</span> Learn by doing.</span><span>Explore a structure. Understand the idea.</span></footer>
