@@ -1,10 +1,11 @@
 import heapq
+from math import dist
 
 from flask import Flask, jsonify, render_template, request, session
 from dsa.linked_list import LinkedList
 from dsa.stack import Stack
 from dsa.queue import Queue
-from dsa.trees_graphs import GRAPH, bfs, create_tree, inorder, postorder, preorder
+from dsa.trees_graphs import GRAPH, GRAPH_POSITIONS, bfs, create_tree, greedy_search, inorder, postorder, preorder
 from dsa.search_sort import binary_search, insertion_sort, linear_search, merge_sort
 
 app = Flask(__name__)
@@ -18,7 +19,7 @@ def payload():
 
 @app.get("/")
 def home():
-    return render_template("dsa_lab.html", graph=GRAPH)
+    return render_template("dsa_lab.html", graph=GRAPH, graph_positions=GRAPH_POSITIONS)
 
 
 @app.post("/api/dsa/linked-list")
@@ -104,6 +105,19 @@ def graph_api():
     return jsonify(start=start, sequence=order, edges=edges, adjacency=GRAPH)
 
 
+@app.post("/api/dsa/greedy-search")
+def greedy_search_api():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(error="Send a JSON object."), 400
+    start, goal = data.get("start"), data.get("goal")
+    if not isinstance(start, str) or start not in GRAPH or not isinstance(goal, str) or goal not in GRAPH:
+        return jsonify(error="Choose valid starting and goal activities."), 400
+    heuristics = {name: round(dist(position, GRAPH_POSITIONS[goal]) / 10, 1)
+                  for name, position in GRAPH_POSITIONS.items()}
+    return jsonify(**greedy_search(GRAPH, start, goal, heuristics), heuristics=heuristics)
+
+
 @app.post("/api/dsa/linear-search")
 def linear_search_api():
     data = payload()
@@ -125,12 +139,22 @@ def numeric_algorithm_api(algorithm):
     if not isinstance(data, dict):
         return jsonify(error="Send a JSON object."), 400
     items = data.get("items")
-    if not isinstance(items, list) or len(items) > 20 or any(type(item) is not int or abs(item) > 999 for item in items):
-        return jsonify(error="Use up to 20 integers between -999 and 999."), 400
+    if not isinstance(items, list) or len(items) > 20:
+        return jsonify(error="Use up to 20 activities."), 400
+    activity_items = all(isinstance(item, str) and 0 < len(item.strip()) <= 80 and "," not in item for item in items)
+    numeric_items = all(type(item) is int and abs(item) <= 999 for item in items)
+    if not activity_items and not numeric_items:
+        return jsonify(error="Use activity names (1-80 characters) or integers between -999 and 999, without mixing them."), 400
+    if activity_items:
+        items = [item.strip() for item in items]
     if algorithm == "binary-search":
         target = data.get("target")
-        if type(target) is not int or abs(target) > 999:
-            return jsonify(error="Enter an integer target between -999 and 999."), 400
+        if activity_items and isinstance(target, str):
+            target = target.strip()
+            if not target or len(target) > 80 or "," in target:
+                return jsonify(error="Enter one activity to search (1-80 characters)."), 400
+        elif not numeric_items or type(target) is not int or abs(target) > 999:
+            return jsonify(error="Enter a search target matching the item type."), 400
         return jsonify(binary_search(items, target))
     return jsonify(algorithms[algorithm](items))
 

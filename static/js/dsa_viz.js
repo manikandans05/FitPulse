@@ -19,11 +19,11 @@ $$('[data-queue]').forEach(b=>b.onclick=()=>queue(b.dataset.queue));renderQueue(
 
 $$('[data-tree]').forEach(b=>b.onclick=async()=>{const d=await post('/api/dsa/tree',{action:b.dataset.tree});$$('.tree-node').forEach(n=>n.classList.remove('hit'));const built=[];for(const value of d.sequence){const n=$(`[data-node="${value}"]`);n.classList.add('hit');built.push(value);$('#treeStatus').textContent=`${d.action}: ${built.join(' → ')}`;await sleep(500);n.classList.remove('hit');}});
 
-const graphPositions={Running:[320,44],Cycling:[500,112],Swimming:[500,248],Strength:[320,316],Yoga:[140,248],Walking:[140,112]};
-function renderGraph(){
+const graphPositions=window.GRAPH_POSITIONS;
+function renderGraph(prefix='graph'){
   const graph=window.GRAPH_DATA;
   const names=Object.keys(graph);
-  const edges=$('#graphEdges');
+  const edges=$(`#${prefix}Edges`);
   edges.replaceChildren();
   const seen=new Set();
   names.forEach(source=>graph[source].forEach(target=>{
@@ -37,13 +37,14 @@ function renderGraph(){
     line.dataset.source=source;line.dataset.target=target;line.classList.add('graph-edge');
     edges.append(line);
   }));
-  const nodes=$('#graphNodes');nodes.replaceChildren();
+  const nodes=$(`#${prefix}Nodes`);nodes.replaceChildren();
   names.forEach(name=>{
     const [x,y]=graphPositions[name]||[320,180];
     const node=document.createElement('div');
     node.className='graph-node';node.dataset.graphNode=name;node.style.left=`${x/640*100}%`;node.style.top=`${y/360*100}%`;node.textContent=name;
     nodes.append(node);
   });
+  if(prefix!=='graph')return;
   const adjacency=$('#adjacencyList');adjacency.replaceChildren();
   names.forEach(name=>{
     const row=document.createElement('div');row.className='adj-row';row.dataset.adjNode=name;
@@ -74,7 +75,7 @@ renderGraph();
 $('#runBfs').onclick=async()=>{
   const button=$('#runBfs');button.disabled=true;
   const queue=[];const discovered=new Set();const visited=[];const treeEdges=[];
-  $$('.graph-node,.graph-edge,.adj-row').forEach(el=>el.classList.remove('visited','current','frontier','discovered'));
+  $$('#graph .graph-node,#graph .graph-edge,#graph .adj-row').forEach(el=>el.classList.remove('visited','current','frontier','discovered'));
   renderBfsQueue([]);renderBfsOrder([]);$('#graphStatus').textContent='Starting breadth-first search…';
   try{
     const start=$('#graphStart').value;
@@ -85,9 +86,9 @@ $('#runBfs').onclick=async()=>{
       visited.push(name);
       const additions=d.edges.filter(([parent])=>parent===name).map(([,child])=>child);
       additions.forEach(child=>{queue.push(child);discovered.add(child);treeEdges.push([name,child]);});
-      $$('.graph-node,.graph-edge,.adj-row').forEach(el=>el.classList.remove('current','frontier'));
-      const current=$(`[data-graph-node="${name}"]`);current.classList.add('visited','current');
-      discovered.forEach(value=>{const node=$(`[data-graph-node="${value}"]`);if(!node.classList.contains('visited'))node.classList.add('frontier');});
+      $$('#graph .graph-node,#graph .graph-edge,#graph .adj-row').forEach(el=>el.classList.remove('current','frontier'));
+      const current=$(`#graph [data-graph-node="${name}"]`);current.classList.add('visited','current');
+      discovered.forEach(value=>{const node=$(`#graph [data-graph-node="${value}"]`);if(!node.classList.contains('visited'))node.classList.add('frontier');});
       treeEdges.forEach(([source,target])=>{
         const edge=$$('#graphEdges line').find(line=>(line.dataset.source===source&&line.dataset.target===target)||(line.dataset.source===target&&line.dataset.target===source));
         if(edge)edge.classList.add('discovered');
@@ -111,7 +112,7 @@ function textElement(tag, className, text){
   return element;
 }
 function setBusy(panel, busy){
-  panel.querySelectorAll('input,button').forEach(control=>control.disabled=busy);
+  panel.querySelectorAll('input,button,select').forEach(control=>control.disabled=busy);
   panel.setAttribute('aria-busy',String(busy));
 }
 function linearItems(){
@@ -122,7 +123,8 @@ function linearItems(){
 function renderSearch(items, inserted=-1){
   const visual=$('#linearVisual');visual.replaceChildren();
   items.forEach((value,index)=>{
-    const node=textElement('div','search-node',`${index}: ${value}`);
+    const node=textElement('div','search-node',value);
+    node.title=`Index ${index}`;
     node.dataset.searchIndex=index;
     if(index===inserted)node.classList.add('hit');
     visual.append(node);
@@ -165,17 +167,16 @@ $('#runLinear').onclick=async()=>{
   finally{setBusy(panel,false);}
 };
 
-function numericItems(input){
+function activityItems(input){
   if(!input.value.trim())return [];
   const parts=input.value.split(',').map(value=>value.trim());
-  if(parts.length>20||parts.some(value=>!/^[-+]?\d+$/.test(value)||Math.abs(Number(value))>999)){
-    throw new Error('Use up to 20 comma-separated integers between -999 and 999.');
+  if(parts.length>20||parts.some(value=>!value||value.length>80)){
+    throw new Error('Use up to 20 comma-separated activities, each 1-80 characters.');
   }
-  return parts.map(Number);
+  return parts;
 }
 function renderArray(container, items, frame={}){
   container.replaceChildren();
-  const maxValue=Math.max(1,...items.map(value=>Math.abs(value)));
   items.forEach((value,index)=>{
     const cell=textElement('div','array-cell','');
     if(frame.active?.includes(index))cell.classList.add('is-active');
@@ -185,9 +186,7 @@ function renderArray(container, items, frame={}){
     if(index===frame.low)markers.push('LOW');
     if(index===frame.middle)markers.push('MID');
     if(index===frame.high)markers.push('HIGH');
-    const bar=textElement('div','value-bar','');
-    bar.style.height=`${18+Math.abs(value)/maxValue*70}px`;
-    cell.append(textElement('span','array-marker',markers.join(' / ')),bar,textElement('strong','array-value',value),textElement('small','array-index',`[${index}]`));
+    cell.append(textElement('span','array-marker',markers.join(' / ')),textElement('strong',value.length>60?'array-value long-activity':'array-value',value),textElement('small','array-index',`Index ${index}`));
     container.append(cell);
   });
   if(!items.length)container.append(textElement('span','queue-empty','Empty array'));
@@ -223,17 +222,17 @@ function createPlayback(panel, showFrame, reset){
 
 $$('.algorithm-panel').forEach(panel=>{
   const key=panel.id;
-  const input=panel.querySelector('.numeric-items');
+  const input=panel.querySelector('.activity-items');
   const visual=$(`#${key}Visual`),detail=$(`#${key}Detail`),status=$(`#${key}Status`);
   function showFrame(frame){
     renderArray(visual,frame.items,frame);detail.replaceChildren();
     if(frame.left)detail.append(textElement('span','buffer-values',`Left buffer: ${frame.left.join(', ')||'empty'}`),textElement('span','buffer-values',`Right buffer: ${frame.right.join(', ')||'empty'}`));
-    if(frame.key!==undefined)detail.append(textElement('span','held-value',`Held value: ${frame.key}`));
+    if(frame.key!==undefined)detail.append(textElement('span','held-value',`Held activity: ${frame.key}`));
     status.textContent=frame.message;
   }
   function reset(){
     detail.replaceChildren();status.textContent='';
-    try{renderArray(visual,numericItems(input));}catch(error){status.textContent=error.message;}
+    try{renderArray(visual,activityItems(input));}catch(error){status.textContent=error.message;}
   }
   const player=createPlayback(panel,showFrame,reset);
   input.oninput=()=>{player.clear();reset();};
@@ -243,14 +242,14 @@ $$('.algorithm-panel').forEach(panel=>{
     player.clear();setBusy(panel,true);
     let frames;
     try{
-      const items=numericItems(input),body={items};
+      const items=activityItems(input),body={items};
       if(key==='binary'){
-        const rawTarget=$('#binaryTarget').value;
-        if(!rawTarget.trim()||!Number.isInteger(Number(rawTarget)))throw new Error('Enter an integer search target.');
-        body.target=Number(rawTarget);
+        const target=$('#binaryTarget').value.trim();
+        if(!target||target.length>80||target.includes(','))throw new Error('Enter one activity to search (1-80 characters).');
+        body.target=target;
       }
       const result=await post(`/api/dsa/${panel.dataset.algorithm}`,body);
-      frames=[{items:key==='binary'?result.items:items,message:key==='binary'?'Sorted input (ascending); indices refer to this sorted array':'Initial array'},...result.steps];
+      frames=[{items:key==='binary'?result.items:items,message:key==='binary'?'Activities sorted A-Z; indices refer to this sorted array':'Initial activities'},...result.steps];
       if(key==='binary')frames.push({items:result.items,active:result.found?[result.index]:[],matched:result.found,middle:result.index,message:result.found?`Found ${body.target} at sorted index ${result.index}`:`${body.target} not found`});
       else frames[frames.length-1].done=true;
     }catch(error){status.textContent=error.message;}
@@ -280,7 +279,7 @@ function renderHeap(items, active){
     const node=textElement('div','heap-node','');
     node.style.left=`${position.left/880*100}%`;node.style.top=`${position.top}px`;
     if(item[1]===active)node.classList.add('is-active');
-    node.append(textElement('strong','heap-priority',item[0]),textElement('span','heap-name',item[2]));
+    node.append(textElement('strong','heap-name',item[2]),textElement('span','heap-priority',`Priority ${item[0]}`));
     node.title=`${item[2]} | priority ${item[0]} | arrival ${item[1]+1}`;
     tree.append(node);
   });
@@ -317,3 +316,61 @@ async function heapOperation(action){
 }
 $$('[data-heap]').forEach(button=>button.onclick=()=>heapOperation(button.dataset.heap));
 renderHeap([]);heapOperation('view');
+
+function setupGreedy(){
+  const panel=$('#greedy'),start=$('#greedyStart'),goal=$('#greedyGoal');
+  let heuristics={};
+  renderGraph('greedy');
+  function renderSequence(selector,items,empty){
+    const container=$(selector);container.replaceChildren();
+    items.forEach((name,index)=>{
+      if(index)container.append(textElement('span','order-arrow','→'));
+      container.append(textElement('span','order-item',name));
+    });
+    if(!items.length)container.append(textElement('span','queue-empty',empty));
+  }
+  function showFrame(frame){
+    $$('#greedyNodes .graph-node').forEach(node=>{
+      const name=node.dataset.graphNode;
+      node.classList.toggle('visited',frame.visited.includes(name));
+      node.classList.toggle('frontier',frame.frontier.includes(name));
+      node.classList.toggle('current',frame.current===name);
+      node.classList.toggle('on-path',frame.path.includes(name));
+      node.classList.toggle('is-goal',name===goal.value);
+      node.replaceChildren(textElement('strong','greedy-activity',name),textElement('small','greedy-score',`h = ${heuristics[name]}${name===goal.value?' · GOAL':''}${name===start.value?' · START':''}`));
+      node.title=`${name}: estimated map distance ${heuristics[name]} to ${goal.value}`;
+    });
+    $$('#greedyEdges line').forEach(line=>{
+      const connects=(source,target)=>(line.dataset.source===source&&line.dataset.target===target)||(line.dataset.source===target&&line.dataset.target===source);
+      line.classList.toggle('discovered',frame.edges.some(([source,target])=>connects(source,target)));
+      line.classList.toggle('on-path',frame.path.some((name,index)=>index>0&&connects(frame.path[index-1],name)));
+    });
+    const frontier=$('#greedyFrontier');frontier.replaceChildren();
+    frame.frontier.forEach((name,index)=>{
+      const isNext=index===0&&!frame.done;
+      const item=textElement('li',isNext?'greedy-candidate next-candidate':'greedy-candidate','');
+      item.append(textElement('strong','',name),textElement('span','',`h = ${heuristics[name]}${isNext?' · NEXT':''}`));frontier.append(item);
+    });
+    if(!frame.frontier.length)frontier.append(textElement('li','queue-empty','Empty frontier'));
+    renderSequence('#greedyVisited',frame.visited,'No activities visited');
+    renderSequence('#greedyPath',frame.path,frame.done?'No path found':'Pending');
+    $('#greedyStatus').textContent=frame.message;
+  }
+  function reset(){
+    const target=graphPositions[goal.value];
+    heuristics=Object.fromEntries(Object.entries(graphPositions).map(([name,position])=>[name,Math.round(Math.hypot(position[0]-target[0],position[1]-target[1]))/10]));
+    showFrame({current:null,visited:[],frontier:[start.value],edges:[],path:[],done:false,message:'Ready'});
+  }
+  const player=createPlayback(panel,showFrame,reset);
+  start.onchange=goal.onchange=()=>{player.clear();reset();};
+  $('#runGreedy').onclick=async()=>{
+    player.clear();reset();setBusy(panel,true);
+    let result;
+    try{result=await post('/api/dsa/greedy-search',{start:start.value,goal:goal.value});heuristics=result.heuristics;}
+    catch(error){$('#greedyStatus').textContent=error.message;}
+    finally{setBusy(panel,false);player.clear();}
+    if(result)player.load(result.steps);
+  };
+  reset();
+}
+setupGreedy();

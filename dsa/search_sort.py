@@ -9,6 +9,10 @@ def linear_search(items, target):
     return {"found": False, "index": -1, "value": None, "steps": steps}
 
 
+def _order_key(value):
+    return value.casefold() if isinstance(value, str) else value
+
+
 def merge_sort(items):
     values = list(items)
     steps = []
@@ -25,7 +29,7 @@ def merge_sort(items):
         left, right = values[start:middle], values[middle:end]
         left_index = right_index = 0
         for position in range(start, end):
-            if right_index == len(right) or (left_index < len(left) and left[left_index] <= right[right_index]):
+            if right_index == len(right) or (left_index < len(left) and _order_key(left[left_index]) <= _order_key(right[right_index])):
                 value = left[left_index]
                 left_index += 1
             else:
@@ -52,7 +56,7 @@ def insertion_sort(items):
         while position >= 0:
             steps.append({"items": values[:], "active": [position], "key": key,
                           "message": f"Compare {values[position]} with held value {key}"})
-            if values[position] <= key:
+            if _order_key(values[position]) <= _order_key(key):
                 break
             values[position + 1] = values[position]
             steps.append({"items": values[:], "active": [position, position + 1], "key": key,
@@ -66,18 +70,18 @@ def insertion_sort(items):
 
 
 def binary_search(items, target):
-    values = sorted(items)
+    values = sorted(items, key=_order_key)
     low, high = 0, len(values) - 1
     steps = []
     while low <= high:
         middle = (low + high) // 2
-        matched = values[middle] == target
+        matched = _order_key(values[middle]) == _order_key(target)
         steps.append({"items": values[:], "active": [middle], "low": low, "high": high,
                       "middle": middle, "matched": matched,
                       "message": f"Low {low}, mid {middle}, high {high}: compare {values[middle]} with {target}"})
         if matched:
             return {"items": values, "found": True, "index": middle, "steps": steps}
-        if values[middle] < target:
+        if _order_key(values[middle]) < _order_key(target):
             low = middle + 1
         else:
             high = middle - 1

@@ -3,9 +3,41 @@ import unittest
 
 from app import app
 from dsa.search_sort import binary_search, insertion_sort, merge_sort
+from dsa.trees_graphs import GRAPH, greedy_search
 
 
 class AlgorithmTests(unittest.TestCase):
+    def test_greedy_uses_heuristic_not_shortest_path(self):
+        graph = {"Running": ["Yoga", "Cycling"], "Yoga": ["Strength"],
+                 "Cycling": ["Running", "Swimming"], "Swimming": ["Strength"], "Strength": []}
+        scores = {"Running": 5, "Yoga": 4, "Cycling": 1, "Swimming": 2, "Strength": 0}
+        result = greedy_search(graph, "Running", "Strength", scores)
+        self.assertEqual(result["path"], ["Running", "Cycling", "Swimming", "Strength"])
+        self.assertEqual(result["visited"], result["path"])
+        self.assertEqual(result["steps"][0]["visited"], [])
+        self.assertEqual(result["steps"][0]["frontier"], ["Running"])
+        self.assertEqual(result["steps"][0]["edges"], [])
+        self.assertTrue(result["steps"][-1]["done"])
+        for before, after in zip(result["steps"], result["steps"][1:]):
+            if len(after["visited"]) > len(before["visited"]):
+                self.assertEqual(after["current"], before["frontier"][0])
+            self.assertEqual(len(after["visited"]), len(set(after["visited"])))
+
+    def test_greedy_ties_cycles_and_unreachable_goal(self):
+        graph = {"Running": ["Yoga", "Cycling"], "Yoga": ["Running"],
+                 "Cycling": ["Running"], "Strength": []}
+        scores = {"Running": 2, "Yoga": 1, "Cycling": 1, "Strength": 0}
+        result = greedy_search(graph, "Running", "Strength", scores)
+        self.assertFalse(result["found"])
+        self.assertEqual(result["path"], [])
+        self.assertEqual(result["visited"], ["Running", "Yoga", "Cycling"])
+        self.assertEqual(result["steps"][-1]["frontier"], [])
+        same = greedy_search(graph, "Yoga", "Yoga", scores)
+        self.assertTrue(same["found"])
+        self.assertEqual(same["path"], ["Yoga"])
+        with self.assertRaises(ValueError):
+            greedy_search(graph, "Unknown", "Yoga", scores)
+
     def test_sort_results_and_snapshots(self):
         generator = random.Random(42)
         cases = [[], [5], [4, 4, -2, 0], list(range(20)), list(range(20, 0, -1))]
@@ -66,6 +98,30 @@ class ApiTests(unittest.TestCase):
             response = self.client.post("/api/dsa/binary-search", json={"items": [3], "target": target})
             self.assertEqual(response.status_code, 400)
 
+    def test_activity_sort_and_search_routes(self):
+        values = ["Yoga", "running", "Cycling", "Running", "Swimming"]
+        for algorithm in ("merge-sort", "insertion-sort", "binary-search"):
+            endpoint = "/api/dsa/" + algorithm
+            response = self.client.post(endpoint, json={"items": values, "target": " RUNNING "})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json["items"], sorted(values, key=str.casefold))
+            for step in response.json["steps"]:
+                self.assertTrue(all(isinstance(value, str) for value in step["items"]))
+            if algorithm == "binary-search":
+                self.assertTrue(response.json["found"])
+                self.assertEqual(response.json["items"][response.json["index"]].casefold(), "running")
+            else:
+                self.assertEqual(response.json["steps"][-1]["items"], sorted(values, key=str.casefold))
+            for invalid in (["Yoga", 3], [" "], ["a" * 81], ["Yoga,Running"], ["Yoga"] * 21):
+                self.assertEqual(self.client.post(endpoint, json={"items": invalid, "target": "Yoga"}).status_code, 400)
+            for items in ([], ["Yoga"]):
+                response = self.client.post(endpoint, json={"items": items, "target": "Walking"})
+                self.assertEqual(response.status_code, 200)
+                if algorithm == "binary-search":
+                    self.assertFalse(response.json["found"])
+        for target in (None, " ", "a" * 81, 3, "Yoga,Running"):
+            self.assertEqual(self.client.post("/api/dsa/binary-search", json={"items": ["Yoga"], "target": target}).status_code, 400)
+
     def test_empty_and_custom_linear_search(self):
         response = self.client.post("/api/dsa/linear-search", json={"items": [], "target": "Yoga"})
         self.assertFalse(response.json["found"])
@@ -104,10 +160,43 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.client.post("/api/dsa/heap", json=["invalid"]).status_code, 400)
         self.assertEqual(self.heap("clear").json["items"], [])
 
+    def test_greedy_route_and_validation(self):
+        for start in GRAPH:
+            for goal in GRAPH:
+                response = self.client.post("/api/dsa/greedy-search", json={"start": start, "goal": goal})
+                self.assertEqual(response.status_code, 200)
+                result = response.json
+                self.assertTrue(result["found"])
+                self.assertEqual(result["heuristics"][goal], 0)
+                self.assertEqual(result["path"][0], start)
+                self.assertEqual(result["path"][-1], goal)
+                for source, target in zip(result["path"], result["path"][1:]):
+                    self.assertIn(target, GRAPH[source])
+                for frame in result["steps"]:
+                    scores = [result["heuristics"][name] for name in frame["frontier"]]
+                    self.assertEqual(scores, sorted(scores))
+        for invalid in ({}, [], False, {"start": [], "goal": "Yoga"}, {"start": "Running", "goal": {}},
+                        {"start": "Unknown", "goal": "Yoga"}, {"start": "Running", "goal": "Unknown"}):
+            self.assertEqual(self.client.post("/api/dsa/greedy-search", json=invalid).status_code, 400)
+
+    def test_activity_tree_traversals(self):
+        expected = {
+            "preorder": ["Running", "Cycling", "Aerobics", "Rowing", "Walking", "Swimming", "Yoga"],
+            "inorder": ["Aerobics", "Cycling", "Rowing", "Running", "Swimming", "Walking", "Yoga"],
+            "postorder": ["Aerobics", "Rowing", "Cycling", "Swimming", "Yoga", "Walking", "Running"],
+        }
+        html = self.client.get("/").get_data(as_text=True)
+        for action, sequence in expected.items():
+            response = self.client.post("/api/dsa/tree", json={"action": action})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json["sequence"], sequence)
+            for activity in sequence:
+                self.assertIn(f'data-node="{activity}"', html)
+
     def test_template_sections(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        for section in ("merge", "insertion", "binary", "heap"):
+        for section in ("merge", "insertion", "binary", "heap", "greedy"):
             self.assertIn(f'id="{section}"', response.get_data(as_text=True))
 
 
